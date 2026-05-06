@@ -1,36 +1,169 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Victim Intake Case Manager
 
-## Getting Started
+A secure intake and reporting management app for MLM, crypto scam, and online fraud victims.
 
-First, run the development server:
+Built with:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- LocalStorage persistence
+
+---
+
+# Purpose
+
+This application helps organize:
+- victim intake forms
+- blockchain transaction evidence
+- TXIDs and wallet addresses
+- screenshots and PDFs
+- scam timelines
+- withdrawal problems
+- fee/tax demands
+- disappearing website behavior
+- complaint submission tracking
+
+The app is designed to help elderly victims and families organize reports and complete official complaint submissions step-by-step.
+
+---
+
+# Features
+
+## Victim Intake Forms
+Create individual reports for each victim including:
+- contact information
+- platform/company information
+- amount deposited
+- TXIDs
+- wallet addresses
+- scam timelines
+- withdrawal issues
+- fee/tax demands
+- supporting evidence notes
+
+---
+
+## Evidence Uploads
+Upload:
+- screenshots
+- PDFs
+- chat messages
+- blockchain proof
+- training materials
+
+Evidence is stored locally in the browser.
+
+---
+
+## Private Report Access
+Each victim report has:
+- an individual access code
+- an admin override code
+
+Victims cannot access other victim reports.
+
+---
+
+## Guided Complaint Steps
+
+Step-by-step reporting guides for:
+- FTC
+- BBB Scam Tracker
+- FBI / IC3
+- Philippines reporting agencies
+- Canada reporting agencies
+
+Designed to be elderly-friendly and easy to follow.
+
+---
+
+## Complaint Progress Tracking
+Track whether complaints were submitted to:
+- FTC
+- BBB
+- FBI / IC3
+- Philippines agencies
+- Canadian agencies
+
+Each report includes a visual progress bar.
+
+---
+
+## Backup & Restore
+Admin-only tools:
+- export all reports as JSON backup
+- import reports from backup
+
+---
+
+# Project Structure
+
+```text
+app/
+├── page.tsx
+├── new/page.tsx
+├── reports/page.tsx
+├── cases/[id]/page.tsx
+├── guides/
+│   ├── ftc/page.tsx
+│   ├── bbb/page.tsx
+│   ├── ic3/page.tsx
+│   ├── philippines/page.tsx
+│   └── canada/page.tsx
+```
+
+---
+
+# Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+# Future Improvements
 
-To learn more about Next.js, take a look at the following resources:
+Planned features:
+- Supabase database
+- authentication
+- encrypted evidence storage
+- search and filters
+- cleaner PDF export
+- evidence categorization
+- country-specific complaint routing
+- cloud backup
+- multi-admin support
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Important Notice
 
-## Deploy on Vercel
+This project is intended for organizational and reporting assistance only.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Users should:
+- use official reporting websites only
+- avoid sharing sensitive passwords or seed phrases
+- avoid paying “recovery” companies claiming guaranteed recovery
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This application does not provide legal or financial advice.
+
+---
+
+# License
+
+Private internal project.
