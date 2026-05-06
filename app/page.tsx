@@ -1,65 +1,118 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-slate-100 px-4 py-10">
+      <div className="mx-auto max-w-6xl">
+        <section className="mb-8 rounded-3xl bg-white p-8 shadow-sm">
+          <h1 className="text-4xl font-bold text-slate-900">
+            Victim Intake Case Manager
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-3 max-w-3xl text-slate-600">
+            Organize individual MLM and crypto scam victim reports, evidence,
+            transaction details, and guided complaint steps.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/new"
+              className="rounded-2xl bg-slate-900 px-5 py-3 text-center text-white transition hover:opacity-90"
+            >
+              New Victim Intake Form
+            </Link>
+
+            <Link
+              href="/reports"
+              className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-center text-slate-900 transition hover:bg-slate-50"
+            >
+              View Saved Individual Reports
+            </Link>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold text-slate-900">
+            Guided Complaint Steps
+          </h2>
+
+          <p className="mt-2 text-slate-600">
+            After completing an individual report, use these guides to help the
+            victim file complaints one at a time. These pages are written as
+            simple step-by-step instructions.
+          </p>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <GuideCard
+              title="FTC Guide"
+              description="Step-by-step help for filing a fraud report with ReportFraud.ftc.gov."
+              href="/guides/ftc"
+              buttonText="Open FTC Guide"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+            <GuideCard
+              title="BBB Guide"
+              description="Step-by-step help for submitting a BBB Scam Tracker report."
+              href="/guides/bbb"
+              buttonText="Open BBB Guide"
+            />
+
+            <GuideCard
+              title="FBI / IC3 Guide"
+              description="Step-by-step help for submitting a cybercrime complaint to IC3."
+              href="/guides/ic3"
+              buttonText="Open IC3 Guide"
+            />
+
+            <GuideCard
+              title="Philippines Reporting Guide"
+              description="Step-by-step reporting help for victims located in the Philippines."
+              href="/guides/philippines"
+              buttonText="Open Philippines Guide"
+            />
+
+            <GuideCard
+              title="Canada Reporting Guide"
+              description="Step-by-step reporting help for victims located in Canada."
+              href="/guides/canada"
+              buttonText="Open Canada Guide"
+            />
+          </div>
+
+          <p className="mt-5 text-xs text-slate-500">
+            Reminder: Use the saved individual report details, TXIDs, wallet
+            addresses, screenshots, dates, fee/tax demands, and timeline when
+            filing each complaint.
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function GuideCard({
+  title,
+  description,
+  href,
+  buttonText,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  buttonText: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+      <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
+
+      <p className="mt-2 text-sm text-slate-600">{description}</p>
+
+      <Link
+        href={href}
+        className="mt-5 inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm text-white hover:opacity-90"
+      >
+        {buttonText}
+      </Link>
     </div>
   );
 }
