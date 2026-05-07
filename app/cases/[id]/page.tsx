@@ -58,7 +58,7 @@ export default function CaseDetailPage() {
   const router = useRouter();
   const caseId = params.id as string;
 
-  const ADMIN_CODE = "admin123";
+  const ADMIN_CODE = "33535";
 
   const [caseFile, setCaseFile] = useState<VictimCase | null>(null);
   const [enteredCode, setEnteredCode] = useState("");

@@ -46,7 +46,7 @@ type VictimCase = {
 };
 
 export default function ReportsPage() {
-  const ADMIN_CODE = "admin123";
+  const ADMIN_CODE = "33535";
 
   const [cases, setCases] = useState<VictimCase[]>([]);
   const [adminCode, setAdminCode] = useState("");
