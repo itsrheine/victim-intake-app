@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "../lib/supabase";
 
 type EvidenceFile = {
   name: string;
@@ -36,6 +37,7 @@ export default function NewCasePage() {
   const [chatMessages, setChatMessages] = useState("");
 
   const [files, setFiles] = useState<EvidenceFile[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const uploadedFiles = e.target.files;
@@ -65,53 +67,63 @@ export default function NewCasePage() {
     setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const newCase = {
-      id: crypto.randomUUID(),
+    setIsSaving(true);
 
-      firstName,
-      lastName,
-      projectName: `${lastName}, ${firstName}`.trim(),
-      countryRegion,
-      email,
-      phone,
-      cityState,
-      accessCode,
+    const caseId = crypto.randomUUID();
+    const projectName = `${lastName}, ${firstName}`.trim();
 
-      platform,
-      personToComplainAbout,
-      amountDeposited,
-      depositDates,
-      txid,
-      walletAddresses,
+    const { error } = await supabase.from("victim_cases").insert([
+      {
+        id: caseId,
 
-      timeline,
-      withdrawalProblems,
-      feeTaxDemands,
-      websiteBehavior,
-      trainingMaterials,
-      chatMessages,
+        first_name: firstName,
+        last_name: lastName,
+        project_name: projectName,
+        country_region: countryRegion,
+        email,
+        phone,
+        city_state: cityState,
+        access_code: accessCode,
 
-      complaints: {
-        ftc: false,
-        bbb: false,
-        ic3: false,
-        philippines: false,
-        canada: false,
+        platform,
+        person_to_complain_about: personToComplainAbout,
+        amount_deposited: amountDeposited,
+        deposit_dates: depositDates,
+        txid,
+        wallet_addresses: walletAddresses,
+
+        timeline,
+        withdrawal_problems: withdrawalProblems,
+        fee_tax_demands: feeTaxDemands,
+        website_behavior: websiteBehavior,
+        training_materials: trainingMaterials,
+        chat_messages: chatMessages,
+
+        complaints: {
+          ftc: false,
+          bbb: false,
+          ic3: false,
+          philippines: false,
+          canada: false,
+        },
+
+        files,
+        status: "Draft",
       },
+    ]);
 
-      files,
+    console.log("SUPABASE ERROR:", error);
 
-      createdAt: new Date().toISOString(),
-      status: "Draft",
-    };
+    setIsSaving(false);
 
-    const savedCases = localStorage.getItem("victim_cases");
-    const cases = savedCases ? JSON.parse(savedCases) : [];
-
-    localStorage.setItem("victim_cases", JSON.stringify([newCase, ...cases]));
+    if (error) {
+      console.error(error);
+      alert("Could not save report to Supabase.");
+      return;
+    }
 
     router.push("/reports");
   }
@@ -317,9 +329,10 @@ export default function NewCasePage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="submit"
-              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
+              disabled={isSaving}
+              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
             >
-              Save Individual Report
+              {isSaving ? "Saving..." : "Save Individual Report"}
             </button>
 
             <Link

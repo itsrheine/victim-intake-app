@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
 type EvidenceFile = {
   name: string;
@@ -20,36 +21,29 @@ type ComplaintStatus = {
 
 type VictimCase = {
   id: string;
-  firstName: string;
-  lastName: string;
-  projectName: string;
-  accessCode: string;
-  countryRegion: string;
-
+  first_name: string;
+  last_name: string;
+  project_name: string;
+  access_code: string;
+  country_region: string;
   email: string;
   phone: string;
-  cityState: string;
-
+  city_state: string;
   platform: string;
-  personToComplainAbout: string;
-
-  amountDeposited: string;
-  depositDates: string;
+  person_to_complain_about: string;
+  amount_deposited: string;
+  deposit_dates: string;
   txid: string;
-  walletAddresses: string;
-
+  wallet_addresses: string;
   timeline: string;
-  withdrawalProblems: string;
-  feeTaxDemands: string;
-  websiteBehavior: string;
-
-  trainingMaterials: string;
-  chatMessages: string;
-
+  withdrawal_problems: string;
+  fee_tax_demands: string;
+  website_behavior: string;
+  training_materials: string;
+  chat_messages: string;
   complaints: ComplaintStatus;
   files: EvidenceFile[];
-
-  createdAt: string;
+  created_at: string;
   status: string;
 };
 
@@ -64,34 +58,43 @@ export default function CaseDetailPage() {
   const [enteredCode, setEnteredCode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    const savedCases = localStorage.getItem("victim_cases");
-    const cases: VictimCase[] = savedCases ? JSON.parse(savedCases) : [];
+    loadCase();
+  }, []);
 
-    const foundCase = cases.find((item) => item.id === caseId);
+  async function loadCase() {
+    const { data, error } = await supabase
+      .from("victim_cases")
+      .select("*")
+      .eq("id", caseId)
+      .single();
 
-    if (!foundCase) {
-      router.push("/");
+    if (error || !data) {
+      console.error(error);
+      router.push("/reports");
       return;
     }
 
     setCaseFile({
-      ...foundCase,
+      ...data,
       complaints: {
-        ftc: foundCase.complaints?.ftc || false,
-        bbb: foundCase.complaints?.bbb || false,
-        ic3: foundCase.complaints?.ic3 || false,
-        philippines: foundCase.complaints?.philippines || false,
-        canada: foundCase.complaints?.canada || false,
+        ftc: data.complaints?.ftc || false,
+        bbb: data.complaints?.bbb || false,
+        ic3: data.complaints?.ic3 || false,
+        philippines: data.complaints?.philippines || false,
+        canada: data.complaints?.canada || false,
       },
-      files: foundCase.files || [],
+      files: data.files || [],
     });
-  }, [caseId, router]);
+
+    setLoading(false);
+  }
 
   function updateField(field: keyof VictimCase, value: string) {
     if (!caseFile) return;
@@ -101,8 +104,8 @@ export default function CaseDetailPage() {
       [field]: value,
     };
 
-    if (field === "firstName" || field === "lastName") {
-      updatedCase.projectName = `${updatedCase.lastName}, ${updatedCase.firstName}`;
+    if (field === "first_name" || field === "last_name") {
+      updatedCase.project_name = `${updatedCase.last_name}, ${updatedCase.first_name}`;
     }
 
     setCaseFile(updatedCase);
@@ -124,22 +127,48 @@ export default function CaseDetailPage() {
     });
   }
 
-  function saveChanges() {
+  async function saveChanges() {
     if (!caseFile) return;
 
     const updatedCase = {
       ...caseFile,
-      projectName: `${caseFile.lastName}, ${caseFile.firstName}`,
+      project_name: `${caseFile.last_name}, ${caseFile.first_name}`,
     };
 
-    const savedCases = localStorage.getItem("victim_cases");
-    const cases: VictimCase[] = savedCases ? JSON.parse(savedCases) : [];
+    const { error } = await supabase
+      .from("victim_cases")
+      .update({
+        first_name: updatedCase.first_name,
+        last_name: updatedCase.last_name,
+        project_name: updatedCase.project_name,
+        access_code: updatedCase.access_code,
+        country_region: updatedCase.country_region,
+        email: updatedCase.email,
+        phone: updatedCase.phone,
+        city_state: updatedCase.city_state,
+        platform: updatedCase.platform,
+        person_to_complain_about: updatedCase.person_to_complain_about,
+        amount_deposited: updatedCase.amount_deposited,
+        deposit_dates: updatedCase.deposit_dates,
+        txid: updatedCase.txid,
+        wallet_addresses: updatedCase.wallet_addresses,
+        timeline: updatedCase.timeline,
+        withdrawal_problems: updatedCase.withdrawal_problems,
+        fee_tax_demands: updatedCase.fee_tax_demands,
+        website_behavior: updatedCase.website_behavior,
+        training_materials: updatedCase.training_materials,
+        chat_messages: updatedCase.chat_messages,
+        complaints: updatedCase.complaints,
+        files: updatedCase.files,
+        status: updatedCase.status,
+      })
+      .eq("id", updatedCase.id);
 
-    const updatedCases = cases.map((item) =>
-      item.id === updatedCase.id ? updatedCase : item
-    );
-
-    localStorage.setItem("victim_cases", JSON.stringify(updatedCases));
+    if (error) {
+      console.error(error);
+      alert("Could not save changes.");
+      return;
+    }
 
     setCaseFile(updatedCase);
     setSaveMessage("Changes saved");
@@ -154,32 +183,36 @@ export default function CaseDetailPage() {
 
     setIsUploading(true);
 
-    Array.from(uploadedFiles).forEach((file) => {
-      const reader = new FileReader();
+    const readers = Array.from(uploadedFiles).map(
+      (file) =>
+        new Promise<EvidenceFile>((resolve) => {
+          const reader = new FileReader();
 
-      reader.onload = () => {
-        setCaseFile((prev) => {
-          if (!prev) return prev;
-
-          return {
-            ...prev,
-            files: [
-              ...(prev.files || []),
-              {
-                name: file.name,
-                type: file.type,
-                dataUrl: reader.result as string,
-              },
-            ],
+          reader.onload = () => {
+            resolve({
+              name: file.name,
+              type: file.type,
+              dataUrl: reader.result as string,
+            });
           };
-        });
-      };
 
-      reader.readAsDataURL(file);
+          reader.readAsDataURL(file);
+        })
+    );
+
+    Promise.all(readers).then((newFiles) => {
+      setCaseFile((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          files: [...(prev.files || []), ...newFiles],
+        };
+      });
+
+      setIsUploading(false);
+      event.target.value = "";
     });
-
-    setIsUploading(false);
-    event.target.value = "";
   }
 
   function removeEvidence(indexToRemove: number) {
@@ -191,10 +224,10 @@ export default function CaseDetailPage() {
     });
   }
 
-  if (!caseFile) {
+  if (loading || !caseFile) {
     return (
-      <main className="min-h-screen bg-slate-100 px-4 py-10">
-        <p>Loading report...</p>
+      <main className="min-h-screen bg-slate-100 px-4 py-8">
+        <p className="text-sm text-slate-600">Loading report...</p>
       </main>
     );
   }
@@ -209,13 +242,13 @@ export default function CaseDetailPage() {
 
   if (!unlocked) {
     return (
-      <main className="min-h-screen bg-slate-100 px-4 py-10">
-        <div className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-sm">
+      <main className="min-h-screen bg-slate-100 px-4 py-8">
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">
             Enter Access Code
           </h1>
 
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-sm text-slate-600">
             This report is private. Enter the victim’s access code or the admin
             code.
           </p>
@@ -224,17 +257,17 @@ export default function CaseDetailPage() {
             type="password"
             value={enteredCode}
             onChange={(e) => setEnteredCode(e.target.value)}
-            className="mt-6 w-full rounded-2xl border border-slate-300 px-4 py-3"
+            className="mt-5 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
             placeholder="Access code"
           />
 
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
           <button
             type="button"
             onClick={() => {
               if (
-                enteredCode === caseFile.accessCode ||
+                enteredCode === caseFile.access_code ||
                 enteredCode === ADMIN_CODE
               ) {
                 setUnlocked(true);
@@ -243,7 +276,7 @@ export default function CaseDetailPage() {
                 setError("Incorrect access code.");
               }
             }}
-            className="mt-5 w-full rounded-2xl bg-slate-900 px-5 py-3 text-white"
+            className="mt-4 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"
           >
             Open Report
           </button>
@@ -253,22 +286,22 @@ export default function CaseDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-10">
+    <main className="min-h-screen bg-slate-100 px-4 py-8">
       <div className="mx-auto max-w-5xl">
         <Link
           href="/reports"
-          className="mb-6 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700"
+          className="mb-5 inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
         >
           ← Back to Saved Reports
         </Link>
 
-        <div className="rounded-3xl bg-white p-8 shadow-sm">
-          <div className="border-b border-slate-200 pb-6">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="border-b border-slate-200 pb-5">
             <h1 className="text-3xl font-bold text-slate-900">
               Individual Victim Report
             </h1>
 
-            <p className="mt-2 font-mono text-xs text-slate-500">
+            <p className="mt-1 font-mono text-xs text-slate-500">
               Report #{caseFile.id.slice(0, 8)}
             </p>
 
@@ -317,29 +350,29 @@ export default function CaseDetailPage() {
             )}
           </div>
 
-          <div className="mt-8 space-y-8">
+          <div className="mt-6 space-y-6">
             <ReportSection title="1. Contact Information">
               <ReportRow
                 label="First Name"
-                value={caseFile.firstName}
+                value={caseFile.first_name}
                 isEditing={isEditing}
-                onChange={(value) => updateField("firstName", value)}
+                onChange={(value) => updateField("first_name", value)}
               />
 
               <ReportRow
                 label="Last Name"
-                value={caseFile.lastName}
+                value={caseFile.last_name}
                 isEditing={isEditing}
-                onChange={(value) => updateField("lastName", value)}
+                onChange={(value) => updateField("last_name", value)}
               />
 
-              <ReportRow label="Case Name" value={caseFile.projectName} />
+              <ReportRow label="Case Name" value={caseFile.project_name} />
 
               <ReportRow
                 label="Country / Region"
-                value={caseFile.countryRegion}
+                value={caseFile.country_region}
                 isEditing={isEditing}
-                onChange={(value) => updateField("countryRegion", value)}
+                onChange={(value) => updateField("country_region", value)}
               />
 
               <ReportRow
@@ -358,9 +391,9 @@ export default function CaseDetailPage() {
 
               <ReportRow
                 label="City / State"
-                value={caseFile.cityState}
+                value={caseFile.city_state}
                 isEditing={isEditing}
-                onChange={(value) => updateField("cityState", value)}
+                onChange={(value) => updateField("city_state", value)}
               />
             </ReportSection>
 
@@ -374,10 +407,10 @@ export default function CaseDetailPage() {
 
               <ReportRow
                 label="Specific Person To Complain About"
-                value={caseFile.personToComplainAbout}
+                value={caseFile.person_to_complain_about}
                 isEditing={isEditing}
                 onChange={(value) =>
-                  updateField("personToComplainAbout", value)
+                  updateField("person_to_complain_about", value)
                 }
               />
             </ReportSection>
@@ -385,16 +418,16 @@ export default function CaseDetailPage() {
             <ReportSection title="3. Blockchain / Deposit Information">
               <ReportRow
                 label="Total Amount Deposited"
-                value={caseFile.amountDeposited}
+                value={caseFile.amount_deposited}
                 isEditing={isEditing}
-                onChange={(value) => updateField("amountDeposited", value)}
+                onChange={(value) => updateField("amount_deposited", value)}
               />
 
               <ReportRow
                 label="Deposit Dates"
-                value={caseFile.depositDates}
+                value={caseFile.deposit_dates}
                 isEditing={isEditing}
-                onChange={(value) => updateField("depositDates", value)}
+                onChange={(value) => updateField("deposit_dates", value)}
                 multiline
               />
 
@@ -408,9 +441,9 @@ export default function CaseDetailPage() {
 
               <ReportRow
                 label="Wallet Addresses"
-                value={caseFile.walletAddresses}
+                value={caseFile.wallet_addresses}
                 isEditing={isEditing}
-                onChange={(value) => updateField("walletAddresses", value)}
+                onChange={(value) => updateField("wallet_addresses", value)}
                 multiline
               />
             </ReportSection>
@@ -426,25 +459,25 @@ export default function CaseDetailPage() {
 
               <ReportRow
                 label="Withdrawal Problems"
-                value={caseFile.withdrawalProblems}
+                value={caseFile.withdrawal_problems}
                 isEditing={isEditing}
-                onChange={(value) => updateField("withdrawalProblems", value)}
+                onChange={(value) => updateField("withdrawal_problems", value)}
                 multiline
               />
 
               <ReportRow
                 label="Fee / Tax Demands, Including 12% Request"
-                value={caseFile.feeTaxDemands}
+                value={caseFile.fee_tax_demands}
                 isEditing={isEditing}
-                onChange={(value) => updateField("feeTaxDemands", value)}
+                onChange={(value) => updateField("fee_tax_demands", value)}
                 multiline
               />
 
               <ReportRow
                 label="Disappearing Website / App Behavior"
-                value={caseFile.websiteBehavior}
+                value={caseFile.website_behavior}
                 isEditing={isEditing}
-                onChange={(value) => updateField("websiteBehavior", value)}
+                onChange={(value) => updateField("website_behavior", value)}
                 multiline
               />
             </ReportSection>
@@ -452,17 +485,17 @@ export default function CaseDetailPage() {
             <ReportSection title="5. Supporting Evidence Notes">
               <ReportRow
                 label="Training Materials"
-                value={caseFile.trainingMaterials}
+                value={caseFile.training_materials}
                 isEditing={isEditing}
-                onChange={(value) => updateField("trainingMaterials", value)}
+                onChange={(value) => updateField("training_materials", value)}
                 multiline
               />
 
               <ReportRow
                 label="Chat Messages / Group Messages"
-                value={caseFile.chatMessages}
+                value={caseFile.chat_messages}
                 isEditing={isEditing}
-                onChange={(value) => updateField("chatMessages", value)}
+                onChange={(value) => updateField("chat_messages", value)}
                 multiline
               />
             </ReportSection>
@@ -472,14 +505,14 @@ export default function CaseDetailPage() {
                 {complaintCount} / 5 complaint steps completed
               </p>
 
-              <div className="mt-3 h-2 w-full rounded-full bg-slate-200">
+              <div className="mt-2 h-2 w-full rounded-full bg-slate-200">
                 <div
                   className="h-2 rounded-full bg-slate-900"
                   style={{ width: `${(complaintCount / 5) * 100}%` }}
                 />
               </div>
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-4 space-y-2">
                 <ComplaintCheckbox
                   label="FTC complaint submitted"
                   checked={caseFile.complaints?.ftc || false}
@@ -519,8 +552,8 @@ export default function CaseDetailPage() {
 
             <ReportSection title="7. Uploaded Evidence Files">
               {isEditing && (
-                <div className="mb-5">
-                  <label className="inline-flex cursor-pointer rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <div className="mb-4">
+                  <label className="inline-flex cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
                     {isUploading ? "Uploading..." : "Add More Evidence Files"}
                     <input
                       type="file"
@@ -538,7 +571,7 @@ export default function CaseDetailPage() {
                   {caseFile.files.map((file, index) => (
                     <div
                       key={index}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                     >
                       <p className="text-sm font-medium text-slate-700">
                         {file.name}
@@ -565,7 +598,7 @@ export default function CaseDetailPage() {
                         <button
                           type="button"
                           onClick={() => removeEvidence(index)}
-                          className="mt-3 rounded-xl border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          className="mt-3 rounded-xl border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                         >
                           Remove Evidence
                         </button>
@@ -574,7 +607,7 @@ export default function CaseDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-500">No files uploaded.</p>
+                <p className="text-sm text-slate-500">No files uploaded.</p>
               )}
             </ReportSection>
           </div>
@@ -592,9 +625,9 @@ function ReportSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 p-5">
-      <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-      <div className="mt-4 space-y-4">{children}</div>
+    <section className="rounded-xl border border-slate-200 p-4">
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <div className="mt-3 space-y-4">{children}</div>
     </section>
   );
 }
@@ -624,17 +657,17 @@ function ReportRow({
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
             rows={5}
-            className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-800"
+            className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800"
           />
         ) : (
           <input
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
-            className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-slate-800"
+            className="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-800"
           />
         )
       ) : (
-        <p className="mt-1 whitespace-pre-wrap text-slate-800">
+        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
           {value || "Not provided"}
         </p>
       )}
@@ -652,7 +685,7 @@ function ComplaintCheckbox({
   onChange: () => void;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-800">
+    <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">
       <input type="checkbox" checked={checked} onChange={onChange} />
       <span>{label}</span>
     </label>

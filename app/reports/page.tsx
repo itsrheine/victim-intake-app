@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 type EvidenceFile = {
   name: string;
@@ -19,29 +20,29 @@ type ComplaintStatus = {
 
 type VictimCase = {
   id: string;
-  firstName: string;
-  lastName: string;
-  projectName: string;
-  accessCode: string;
+  first_name: string;
+  last_name: string;
+  project_name: string;
+  access_code: string;
   email: string;
   phone: string;
-  cityState: string;
-  countryRegion: string;
+  city_state: string;
+  country_region: string;
   platform: string;
-  personToComplainAbout: string;
-  amountDeposited: string;
-  depositDates: string;
+  person_to_complain_about: string;
+  amount_deposited: string;
+  deposit_dates: string;
   txid: string;
-  walletAddresses: string;
+  wallet_addresses: string;
   timeline: string;
-  withdrawalProblems: string;
-  feeTaxDemands: string;
-  websiteBehavior: string;
-  trainingMaterials: string;
-  chatMessages: string;
+  withdrawal_problems: string;
+  fee_tax_demands: string;
+  website_behavior: string;
+  training_materials: string;
+  chat_messages: string;
   files: EvidenceFile[];
   complaints: ComplaintStatus;
-  createdAt: string;
+  created_at: string;
   status: string;
 };
 
@@ -49,14 +50,32 @@ export default function ReportsPage() {
   const ADMIN_CODE = "33535";
 
   const [cases, setCases] = useState<VictimCase[]>([]);
+  const [loading, setLoading] = useState(true);
   const [adminCode, setAdminCode] = useState("");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [adminError, setAdminError] = useState("");
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    const savedCases = localStorage.getItem("victim_cases");
-    if (savedCases) setCases(JSON.parse(savedCases));
+    loadCases();
   }, []);
+
+  async function loadCases() {
+    const { data, error } = await supabase
+      .from("victim_cases")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      alert("Could not load reports.");
+      setLoading(false);
+      return;
+    }
+
+    setCases(data || []);
+    setLoading(false);
+  }
 
   function unlockAdmin() {
     if (adminCode === ADMIN_CODE) {
@@ -67,15 +86,26 @@ export default function ReportsPage() {
     }
   }
 
-  function deleteCase(caseId: string) {
-    const updatedCases = cases.filter((caseFile) => caseFile.id !== caseId);
-    setCases(updatedCases);
-    localStorage.setItem("victim_cases", JSON.stringify(updatedCases));
+  async function deleteCase(caseId: string) {
+    const { error } = await supabase
+      .from("victim_cases")
+      .delete()
+      .eq("id", caseId);
+
+    if (error) {
+      console.error(error);
+      alert("Could not delete report.");
+      return;
+    }
+
+    setCases((prev) => prev.filter((caseFile) => caseFile.id !== caseId));
   }
 
   function exportAllCases() {
-    const savedCases = localStorage.getItem("victim_cases") || "[]";
-    const blob = new Blob([savedCases], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(cases, null, 2)], {
+      type: "application/json",
+    });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
@@ -87,34 +117,107 @@ export default function ReportsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
     URL.revokeObjectURL(url);
   }
 
-  function importBackup(event: React.ChangeEvent<HTMLInputElement>) {
+  function normalizeCase(item: any): Omit<VictimCase, "created_at"> {
+    const firstName = item.first_name || item.firstName || "";
+    const lastName = item.last_name || item.lastName || "";
+    const projectName =
+      item.project_name ||
+      item.projectName ||
+      `${lastName}, ${firstName}`.trim();
+
+    return {
+      id: item.id || crypto.randomUUID(),
+
+      first_name: firstName,
+      last_name: lastName,
+      project_name: projectName,
+      access_code: item.access_code || item.accessCode || "",
+
+      email: item.email || "",
+      phone: item.phone || "",
+      city_state: item.city_state || item.cityState || "",
+      country_region: item.country_region || item.countryRegion || "",
+
+      platform: item.platform || "",
+      person_to_complain_about:
+        item.person_to_complain_about || item.personToComplainAbout || "",
+
+      amount_deposited: item.amount_deposited || item.amountDeposited || "",
+      deposit_dates: item.deposit_dates || item.depositDates || "",
+      txid: item.txid || "",
+      wallet_addresses: item.wallet_addresses || item.walletAddresses || "",
+
+      timeline: item.timeline || "",
+      withdrawal_problems:
+        item.withdrawal_problems || item.withdrawalProblems || "",
+      fee_tax_demands: item.fee_tax_demands || item.feeTaxDemands || "",
+      website_behavior: item.website_behavior || item.websiteBehavior || "",
+
+      training_materials: item.training_materials || item.trainingMaterials || "",
+      chat_messages: item.chat_messages || item.chatMessages || "",
+
+      files: item.files || [],
+      complaints: {
+        ftc: item.complaints?.ftc || false,
+        bbb: item.complaints?.bbb || false,
+        ic3: item.complaints?.ic3 || false,
+        philippines: item.complaints?.philippines || false,
+        canada: item.complaints?.canada || false,
+      },
+
+      status: item.status || "Draft",
+    };
+  }
+
+  async function importBackupToSupabase(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setImporting(true);
+
     const reader = new FileReader();
 
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const importedCases = JSON.parse(reader.result as string);
 
         if (!Array.isArray(importedCases)) {
-          alert("Invalid backup file.");
+          alert("Invalid backup file. The backup should contain a list of cases.");
+          setImporting(false);
           return;
         }
 
-        localStorage.setItem("victim_cases", JSON.stringify(importedCases));
-        setCases(importedCases);
-        alert("Backup imported successfully.");
-      } catch {
-        alert("Could not import backup file.");
+        const normalizedCases = importedCases.map(normalizeCase);
+
+        const { error } = await supabase
+          .from("victim_cases")
+          .upsert(normalizedCases, { onConflict: "id" });
+
+        if (error) {
+          console.error(error);
+          alert("Could not import backup into Supabase.");
+          setImporting(false);
+          return;
+        }
+
+        alert("Backup imported successfully into Supabase.");
+        await loadCases();
+      } catch (error) {
+        console.error(error);
+        alert("Could not read backup file.");
+      } finally {
+        setImporting(false);
+        event.target.value = "";
       }
     };
 
     reader.readAsText(file);
-    event.target.value = "";
   }
 
   return (
@@ -159,7 +262,7 @@ export default function ReportsPage() {
                 Admin Tools
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Backup and restore tools are protected by the admin code.
+                Backup, restore, and import tools are protected by the admin code.
               </p>
             </div>
 
@@ -174,12 +277,13 @@ export default function ReportsPage() {
                 </button>
 
                 <label className="cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-800 hover:bg-slate-50">
-                  Import Backup
+                  {importing ? "Importing..." : "Import Backup to Supabase"}
                   <input
                     type="file"
                     accept="application/json,.json"
-                    onChange={importBackup}
+                    onChange={importBackupToSupabase}
                     className="hidden"
+                    disabled={importing}
                   />
                 </label>
               </div>
@@ -209,7 +313,11 @@ export default function ReportsPage() {
           )}
         </section>
 
-        {cases.length === 0 ? (
+        {loading ? (
+          <div className="rounded-2xl bg-white p-8 text-center text-sm text-slate-500">
+            Loading reports...
+          </div>
+        ) : cases.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
             No saved reports yet.
           </div>
@@ -232,7 +340,7 @@ export default function ReportsPage() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <h2 className="text-xl font-semibold text-slate-900">
-                        {caseFile.projectName || "Unnamed Victim"}
+                        {caseFile.project_name || "Unnamed Victim"}
                       </h2>
 
                       <p className="mt-1 font-mono text-xs text-slate-500">
@@ -244,7 +352,7 @@ export default function ReportsPage() {
                           <span className="font-medium text-slate-700">
                             Country:
                           </span>{" "}
-                          {caseFile.countryRegion || "Not provided"}
+                          {caseFile.country_region || "Not provided"}
                         </p>
 
                         <p>
@@ -258,14 +366,14 @@ export default function ReportsPage() {
                           <span className="font-medium text-slate-700">
                             Amount:
                           </span>{" "}
-                          {caseFile.amountDeposited || "Not provided"}
+                          {caseFile.amount_deposited || "Not provided"}
                         </p>
 
                         <p>
                           <span className="font-medium text-slate-700">
                             Complaint Against:
                           </span>{" "}
-                          {caseFile.personToComplainAbout || "Not provided"}
+                          {caseFile.person_to_complain_about || "Not provided"}
                         </p>
 
                         <p>
@@ -280,8 +388,8 @@ export default function ReportsPage() {
                           <span className="font-medium text-slate-700">
                             Created:
                           </span>{" "}
-                          {caseFile.createdAt
-                            ? new Date(caseFile.createdAt).toLocaleDateString()
+                          {caseFile.created_at
+                            ? new Date(caseFile.created_at).toLocaleDateString()
                             : "Not provided"}
                         </p>
                       </div>
