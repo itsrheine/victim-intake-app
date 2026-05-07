@@ -128,14 +128,14 @@ export default function CaseDetailPage() {
   }
 
   async function saveChanges() {
-    if (!caseFile) return;
+  if (!caseFile) return;
 
-    const updatedCase = {
-      ...caseFile,
-      project_name: `${caseFile.last_name}, ${caseFile.first_name}`,
-    };
+  const updatedCase = {
+    ...caseFile,
+    project_name: `${caseFile.last_name}, ${caseFile.first_name}`,
+  };
 
-    const { error } = await supabase
+  const { error } = await supabase
       .from("victim_cases")
       .update({
         first_name: updatedCase.first_name,
@@ -164,9 +164,11 @@ export default function CaseDetailPage() {
       })
       .eq("id", updatedCase.id);
 
+    console.log("SAVE ERROR:", error);
+
     if (error) {
-      console.error(error);
       alert("Could not save changes.");
+      console.error(error);
       return;
     }
 

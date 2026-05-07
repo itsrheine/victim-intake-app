@@ -51,10 +51,15 @@ export default function ReportsPage() {
 
   const [cases, setCases] = useState<VictimCase[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [adminCode, setAdminCode] = useState("");
   const [adminUnlocked, setAdminUnlocked] = useState(false);
   const [adminError, setAdminError] = useState("");
   const [importing, setImporting] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [progressFilter, setProgressFilter] = useState("");
 
   useEffect(() => {
     loadCases();
@@ -87,6 +92,12 @@ export default function ReportsPage() {
   }
 
   async function deleteCase(caseId: string) {
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this report?"
+    );
+
+    if (!confirmDelete) return;
+
     const { error } = await supabase
       .from("victim_cases")
       .delete()
@@ -157,10 +168,12 @@ export default function ReportsPage() {
       fee_tax_demands: item.fee_tax_demands || item.feeTaxDemands || "",
       website_behavior: item.website_behavior || item.websiteBehavior || "",
 
-      training_materials: item.training_materials || item.trainingMaterials || "",
+      training_materials:
+        item.training_materials || item.trainingMaterials || "",
       chat_messages: item.chat_messages || item.chatMessages || "",
 
       files: item.files || [],
+
       complaints: {
         ftc: item.complaints?.ftc || false,
         bbb: item.complaints?.bbb || false,
@@ -220,6 +233,48 @@ export default function ReportsPage() {
     reader.readAsText(file);
   }
 
+  const filteredCases = cases.filter((caseFile) => {
+    const complaintCount = [
+      caseFile.complaints?.ftc,
+      caseFile.complaints?.bbb,
+      caseFile.complaints?.ic3,
+      caseFile.complaints?.philippines,
+      caseFile.complaints?.canada,
+    ].filter(Boolean).length;
+
+    const searchText = [
+      caseFile.project_name,
+      caseFile.first_name,
+      caseFile.last_name,
+      caseFile.platform,
+      caseFile.country_region,
+      caseFile.person_to_complain_about,
+      caseFile.amount_deposited,
+      caseFile.email,
+      caseFile.phone,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch = searchText.includes(searchTerm.toLowerCase());
+
+    const matchesCountry =
+      countryFilter === "" ||
+      caseFile.country_region
+        ?.toLowerCase()
+        .includes(countryFilter.toLowerCase());
+
+    const matchesProgress =
+      progressFilter === "" ||
+      (progressFilter === "not-started" && complaintCount === 0) ||
+      (progressFilter === "in-progress" &&
+        complaintCount > 0 &&
+        complaintCount < 5) ||
+      (progressFilter === "completed" && complaintCount === 5);
+
+    return matchesSearch && matchesCountry && matchesProgress;
+  });
+
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8">
       <div className="mx-auto max-w-6xl">
@@ -238,7 +293,7 @@ export default function ReportsPage() {
               </h1>
 
               <p className="mt-1 text-sm text-slate-600">
-                View, open, and manage saved victim intake reports.
+                View, open, search, and manage saved victim intake reports.
               </p>
 
               <p className="mt-1 text-xs text-slate-500">
@@ -313,17 +368,72 @@ export default function ReportsPage() {
           )}
         </section>
 
+        <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">
+            Search Reports
+          </h2>
+
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search name, platform, phone, email..."
+              className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+            />
+
+            <input
+              type="text"
+              value={countryFilter}
+              onChange={(e) => setCountryFilter(e.target.value)}
+              placeholder="Filter by country"
+              className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+            />
+
+            <select
+              value={progressFilter}
+              onChange={(e) => setProgressFilter(e.target.value)}
+              className="rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
+            >
+              <option value="">All progress</option>
+              <option value="not-started">Not started</option>
+              <option value="in-progress">In progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-slate-500">
+              Showing {filteredCases.length} of {cases.length} reports.
+            </p>
+
+            {(searchTerm || countryFilter || progressFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setCountryFilter("");
+                  setProgressFilter("");
+                }}
+                className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </section>
+
         {loading ? (
           <div className="rounded-2xl bg-white p-8 text-center text-sm text-slate-500">
             Loading reports...
           </div>
-        ) : cases.length === 0 ? (
+        ) : filteredCases.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-            No saved reports yet.
+            No reports found.
           </div>
         ) : (
           <div className="grid gap-3">
-            {cases.map((caseFile) => {
+            {filteredCases.map((caseFile) => {
               const complaintCount = [
                 caseFile.complaints?.ftc,
                 caseFile.complaints?.bbb,
