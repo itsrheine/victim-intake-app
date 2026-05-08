@@ -35,9 +35,15 @@ export default function NewCasePage() {
   const [websiteBehavior, setWebsiteBehavior] = useState("");
   const [trainingMaterials, setTrainingMaterials] = useState("");
   const [chatMessages, setChatMessages] = useState("");
+  const [incidentDescription, setIncidentDescription] = useState("");
 
   const [files, setFiles] = useState<EvidenceFile[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [wentToSeminar, setWentToSeminar] = useState("");
+  const [seminarHost, setSeminarHost] = useState("");
+  const [seminarLocation, setSeminarLocation] = useState("");
+
+  const [authorityPermission, setAuthorityPermission] = useState(false);
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const uploadedFiles = e.target.files;
@@ -101,6 +107,12 @@ export default function NewCasePage() {
         website_behavior: websiteBehavior,
         training_materials: trainingMaterials,
         chat_messages: chatMessages,
+
+        went_to_seminar: wentToSeminar,
+        seminar_host: seminarHost,
+        seminar_location: seminarLocation,
+        authority_permission: authorityPermission,
+        incident_description: incidentDescription,
 
         complaints: {
           ftc: false,
@@ -207,6 +219,12 @@ export default function NewCasePage() {
           </Section>
 
           <Section title="4. Individual Story">
+              <Textarea
+                label="Describe What Happened From The Beginning"
+                value={incidentDescription}
+                onChange={setIncidentDescription}
+                placeholder="Describe how you first started with this company/platform, who introduced you, what you were told, how your membership or account progressed, the last day you traded or accessed the platform, and the total amount of money you lost. Do not include sensitive information such as SSN, DOB, driver's license numbers, account numbers, passwords, seed phrases, or medical history."
+              />
             <Textarea
               label="Timeline Of Events"
               value={timeline}
@@ -230,7 +248,7 @@ export default function NewCasePage() {
               value={websiteBehavior}
               onChange={setWebsiteBehavior}
             />
-          </Section>
+            </Section> 
 
           <Section title="5. Supporting Evidence Notes">
             <Textarea
@@ -244,6 +262,91 @@ export default function NewCasePage() {
               value={chatMessages}
               onChange={setChatMessages}
             />
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Seminar / Presentation Information
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-600">
+                Please provide information about any seminar, webinar, hotel presentation,
+                recruitment meeting, or online event related to this platform.
+              </p>
+
+              <div className="mt-5 grid gap-5">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Did you attend a seminar, webinar, or presentation?
+                  </label>
+
+                  <select
+                    value={wentToSeminar}
+                    onChange={(e) => setWentToSeminar(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-500"
+                  >
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Who hosted or presented the seminar/presentation?
+                  </label>
+
+                  <input
+                    type="text"
+                    value={seminarHost}
+                    onChange={(e) => setSeminarHost(e.target.value)}
+                    placeholder="Name of presenter, recruiter, speaker, or organization"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Where was the seminar or presentation conducted?
+                  </label>
+
+                  <input
+                    type="text"
+                    value={seminarLocation}
+                    onChange={(e) => setSeminarLocation(e.target.value)}
+                    placeholder="Hotel, restaurant, Zoom, Discord, Telegram, city, etc."
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={authorityPermission}
+                    onChange={(e) => setAuthorityPermission(e.target.checked)}
+                    className="mt-1 h-4 w-4"
+                  />
+
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">
+                      I authorize this information to be used for reporting to the FTC,
+                      BBB, FBI IC3, Canadian Anti-Fraud Centre, or other proper authorities.
+                    </p>
+
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                      We will NOT select options requesting direct interviews or personal
+                      follow-up contact from authorities unless separately discussed with
+                      you first.
+                    </p>
+
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                      This information is intended to help organize and submit fraud,
+                      scam, or deceptive business activity reports to the proper agencies.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </Section>
 
           <Section title="6. Upload Evidence">
@@ -391,10 +494,12 @@ function Textarea({
   label,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -405,6 +510,7 @@ function Textarea({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         rows={4}
         className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-slate-500"
       />

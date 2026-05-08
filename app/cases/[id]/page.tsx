@@ -45,6 +45,11 @@ type VictimCase = {
   files: EvidenceFile[];
   created_at: string;
   status: string;
+  went_to_seminar: string;
+  seminar_host: string;
+  seminar_location: string;
+  authority_permission: boolean;
+  incident_description: string;
 };
 
 export default function CaseDetailPage() {
@@ -75,7 +80,7 @@ export default function CaseDetailPage() {
       .eq("id", caseId)
       .single();
 
-    if (error || !data) {
+      if (error || !data) {
       console.error(error);
       router.push("/reports");
       return;
@@ -161,6 +166,11 @@ export default function CaseDetailPage() {
         complaints: updatedCase.complaints,
         files: updatedCase.files,
         status: updatedCase.status,
+        went_to_seminar: updatedCase.went_to_seminar,
+        seminar_host: updatedCase.seminar_host,
+        seminar_location: updatedCase.seminar_location,
+        authority_permission: updatedCase.authority_permission,
+        incident_description: updatedCase.incident_description,
       })
       .eq("id", updatedCase.id);
 
@@ -452,6 +462,15 @@ export default function CaseDetailPage() {
 
             <ReportSection title="4. Individual Story">
               <ReportRow
+                label="Describe What Happened From The Beginning"
+                value={caseFile.incident_description}
+                isEditing={isEditing}
+                onChange={(value) =>
+                  updateField("incident_description", value)
+                }
+                multiline
+              />
+              <ReportRow
                 label="Timeline Of Events"
                 value={caseFile.timeline}
                 isEditing={isEditing}
@@ -500,6 +519,42 @@ export default function CaseDetailPage() {
                 onChange={(value) => updateField("chat_messages", value)}
                 multiline
               />
+              <ReportRow
+                label="Did They Attend A Seminar / Presentation?"
+                value={caseFile.went_to_seminar}
+                isEditing={isEditing}
+                onChange={(value) => updateField("went_to_seminar", value)}
+              />
+
+              <ReportRow
+                label="Seminar / Presentation Host"
+                value={caseFile.seminar_host}
+                isEditing={isEditing}
+                onChange={(value) => updateField("seminar_host", value)}
+              />
+
+              <ReportRow
+                label="Seminar / Presentation Location"
+                value={caseFile.seminar_location}
+                isEditing={isEditing}
+                onChange={(value) => updateField("seminar_location", value)}
+              />
+
+              <ComplaintCheckbox
+                label="Authorized to use this information for reporting to FTC / BBB / FBI / proper authorities"
+                checked={caseFile.authority_permission || false}
+                onChange={() =>
+                  setCaseFile({
+                    ...caseFile,
+                    authority_permission: !caseFile.authority_permission,
+                  })
+                }
+              />
+
+              <p className="text-xs text-slate-500">
+                We will not select options requesting interviews or direct follow-up from
+                authorities unless separately discussed first.
+              </p>
             </ReportSection>
 
             <ReportSection title="6. Complaint Submission Progress">

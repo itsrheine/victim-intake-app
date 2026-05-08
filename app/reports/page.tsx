@@ -44,6 +44,10 @@ type VictimCase = {
   complaints: ComplaintStatus;
   created_at: string;
   status: string;
+  went_to_seminar: string;
+  seminar_host: string;
+  seminar_location: string;
+  authority_permission: boolean;
 };
 
 export default function ReportsPage() {
@@ -171,6 +175,12 @@ export default function ReportsPage() {
       training_materials:
         item.training_materials || item.trainingMaterials || "",
       chat_messages: item.chat_messages || item.chatMessages || "",
+
+      went_to_seminar: item.went_to_seminar || item.wentToSeminar || "",
+      seminar_host: item.seminar_host || item.seminarHost || "",
+      seminar_location: item.seminar_location || item.seminarLocation || "",
+      authority_permission:
+        item.authority_permission || item.authorityPermission || false,
 
       files: item.files || [],
 
