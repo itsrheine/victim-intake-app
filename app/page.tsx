@@ -12,18 +12,18 @@ export default function HomePage() {
               </p>
 
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950">
-                BGWS 2015 Victim Support Portal
+                BGWS 2025 Victim Support Portal
               </h1>
 
               <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-600">
-                Internal intake and organization system for BGWS 2015 members
+                Internal intake and organization system for BGWS 2025 members
                 documenting blockchain transaction hashes, deposit history,
                 withdrawal problems, evidence files, and complaint progress for
                 official reporting purposes.
               </p>
 
               <div className="mt-5 inline-flex rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                Private Internal Use Only • Team BGWS 2015
+                Private Internal Use Only • Team BGWS 2025
               </div>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
